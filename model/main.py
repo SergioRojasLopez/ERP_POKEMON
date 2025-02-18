@@ -45,11 +45,10 @@ CREATE TABLE IF NOT EXISTS compras (
     cantidad INT,
     precioTotal REAL,
     metodoDePago TEXT,
-    FOREIGN KEY (idEntrenador) REFERENCES entrenadores(id),
-    FOREIGN KEY (idPokemon) REFERENCES pokemons(id)
+    FOREIGN KEY (idEntrenador) REFERENCES entrenadores(id) ON DELETE RESTRICT,
+    FOREIGN KEY (idPokemon) REFERENCES pokemons(id) ON DELETE RESTRICT
 );
 """)
-
 
 class PokemonManager:
     pokemon_list = []
@@ -219,8 +218,13 @@ class PokemonManager:
     @staticmethod
     def delete_pokemon():
         id_pokemon_borrar = int(input("Introduce el ID del Pokémon a borrar: "))
-        conen.execute("DELETE FROM pokemons WHERE id = ?;", (id_pokemon_borrar,))
-        print(f"Pokémon con ID ({id_pokemon_borrar}) eliminado.")
+        try:
+            conen.execute("DELETE FROM pokemons WHERE id = ?;", (id_pokemon_borrar,))
+            conen.commit()
+            print(f"Pokémon con ID {id_pokemon_borrar} eliminado correctamente.")
+        except duckdb.duckdb.ConstraintException:
+            print(f"No puedes eliminar el pokemon con ID {id_pokemon_borrar} porque esta asociado a una compra.")
+
 
     @staticmethod
     def list_pokemon():
@@ -364,8 +368,12 @@ class EntrenadorManager:
     @staticmethod
     def delete_trainer():
         id_entrenador_borrar = int(input("Introduce el ID del entrenador a borrar: "))
-        conen.execute("DELETE FROM entrenadores WHERE id = ?;", (id_entrenador_borrar,))
-        print(f"Entrenador con ID ({id_entrenador_borrar}) eliminado.")
+        try:
+            conen.execute("DELETE FROM entrenadores WHERE id = ?;", (id_entrenador_borrar,))
+            conen.commit()
+            print(f"Entrenador con ID ({id_entrenador_borrar}) eliminado.")
+        except duckdb.duckdb.ConstraintException:
+            print(f"No puedes eliminar el entrenador con ID {id_entrenador_borrar} porque esta asociado a una compra.")
 
     @staticmethod
     def list_trainers():
@@ -406,6 +414,11 @@ class CompraManager:
     @staticmethod
     def add_compra():
         print("\nHas elegido la opción de añadir una compra.")
+
+        print("Entrenadores:")
+        conen.table("entrenadores").show()
+        print("Pokemons disponibles para comprar:")
+        conen.table("pokemons").show()
 
         # Verificar si hay Entrenadores disponibles
         entrenadores_count = conen.execute("SELECT COUNT(*) FROM entrenadores;").fetchone()[0]
