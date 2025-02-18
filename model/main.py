@@ -1,4 +1,5 @@
 import string
+from datetime import datetime
 
 from Pokemon import Pokemon
 from Entrenador import Entrenador
@@ -39,7 +40,7 @@ CREATE TABLE IF NOT EXISTS entrenadores (
 conen.execute("""
 CREATE TABLE IF NOT EXISTS compras (
     idCompra INT PRIMARY KEY,
-    fechaYHora TIMESTAMP,
+    fechaYHora TEXT,
     idEntrenador INT,
     idPokemon INT,
     cantidad INT,
@@ -386,7 +387,7 @@ class CompraManager:
     @staticmethod
     def menu_options():
         while True:
-            print("\n-------- POKEMON MANAGER ---------")
+            print("\n-------- COMPRA MANAGER ---------")
             print("1 - Añadir Compra")
             print("2 - Editar Compra")
             print("3 - Borrar Compra")
@@ -397,7 +398,7 @@ class CompraManager:
 
             actions = {
                 "1": CompraManager.add_compra,
-                "2": CompraManager,
+                "2": CompraManager.edit_compra,
                 "3": CompraManager.delete_compra,
                 "4": CompraManager.list_compras,
                 "5": lambda: None  # Regresar al menú principal
@@ -508,11 +509,13 @@ class CompraManager:
             except ValueError:
                 print("ERROR: Método de pago no válido. Elige de la lista.")
 
-        fechaYHora = input("Introduce la fecha y hora de la compra (YYYY-MM-DD HH:MM:SS): ")
+        #FECHA Y HORA
+        fechaYHora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Crear la compra
         compra = Compras(idCompra, fechaYHora, idEntrenador, idPokemon, cantidad, precioTotal, metodoDePago.value)
         print(f"Compra con ID ({idCompra}) añadida correctamente!")
+        CompraManager.compras_list.append(compra)
 
         # Insertar en la base de datos
         conen.execute("""
@@ -580,7 +583,7 @@ class CompraManager:
             UPDATE compras 
             SET cantidad = ?, precioTotal = ?, metodoDePago = ? 
             WHERE idCompra = ?;
-        """, (new_cantidad, new_precioTotal, new_metodoDePago.value, idCompra))
+        """, (new_cantidad, new_precioTotal, new_metodoDePago.value,idCompra))
 
         print(f"Compra con ID ({idCompra}) actualizada correctamente.")
 
@@ -625,7 +628,6 @@ class MainMenu:
                 exit()
             else:
                 print("ERROR: Opción inválida.")
-
 
 if __name__ == "__main__":
     MainMenu.menu_options()
